@@ -1,0 +1,16 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <!-- capsule -->
+    <group android:pivotX="50.8" android:pivotY="47.8" android:rotation="-45">
+        <path android:fillColor="#FFFFFF"
+            android:pathData="M49.9,36.8H35.8A11,11 0 0 0 35.8,58.8H49.9Z" />
+        <path android:fillColor="#FFC857"
+            android:pathData="M51.7,36.8H65.8A11,11 0 0 1 65.8,58.8H51.7Z" />
+    </group>
+    <!-- tablet with medical plus -->
+    <path android:fillColor="#FFFFFF"
+        android:pathData="M68.8,71.8m-10,0a10,10 0 1 1 20,0a10,10 0 1 1 -20,0" />
+    <path android:fillColor="#2B5BE0"
+        android:pathData="M62.8,70.3h12v3h-12z M67.3,65.8h3v12h-3z" />
+</vector>
