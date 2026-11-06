@@ -359,7 +359,7 @@ fun TotalBar(
         Row(Modifier.padding(horizontal = 24.dp, vertical = 20.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Text("Grand Total", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onPrimaryContainer)
-                Text(money(total), fontSize = 32.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                OdometerText(money(total), fontSize = 32.sp, color = MaterialTheme.colorScheme.onPrimaryContainer)
             }
             Column(horizontalAlignment = Alignment.End) {
                 if (showHistoryButton) {
