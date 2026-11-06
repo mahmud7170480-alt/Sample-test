@@ -9,6 +9,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import androidx.room.withTransaction
 import java.io.File
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -211,6 +212,92 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             val ok = withContext(Dispatchers.IO) { InvoiceImage.copyToGallery(getApplication(), f) }
             say(if (ok) "Saved to Pictures/SampleCount" else "Could not save to gallery")
+        }
+    }
+
+    // ---- backup & restore ----
+    private val _pendingRestore = MutableStateFlow<BackupData?>(null)
+    val pendingRestore = _pendingRestore.asStateFlow()
+
+    fun createBackup(uri: Uri) {
+        viewModelScope.launch {
+            try {
+                withContext(Dispatchers.IO) {
+                    val profilesData = profileDao.allProfiles().map { p ->
+                        BackupProfile(
+                            p.name, p.createdAt, p.lastAccessed,
+                            productDao.all(p.id).map { BackupProduct(it.name, it.rate, it.cc, it.pot, it.soldUnit, it.quantity) }
+                        )
+                    }
+                    val bytes = Backup.write(profilesData, InvoiceImage.dir(getApplication()), System.currentTimeMillis())
+                    getApplication<Application>().contentResolver.openOutputStream(uri)?.use { it.write(bytes) }
+                        ?: error("Cannot open file")
+                }
+                say("Backup saved")
+            } catch (e: Exception) {
+                say("Backup failed: ${e.message}")
+            }
+        }
+    }
+
+    /** Step 1: read and check the file. Nothing is changed until the user confirms. */
+    fun prepareRestore(uri: Uri) {
+        viewModelScope.launch {
+            try {
+                val data = withContext(Dispatchers.IO) {
+                    val bytes = getApplication<Application>().contentResolver.openInputStream(uri)?.use { it.readBytes() }
+                        ?: error("Cannot open file")
+                    Backup.read(bytes)
+                }
+                if (data == null) say("This is not a valid SampleCount backup") else _pendingRestore.value = data
+            } catch (e: Exception) {
+                say("Could not read backup: ${e.message}")
+            }
+        }
+    }
+
+    fun cancelRestore() { _pendingRestore.value = null }
+
+    /** Step 2: replace ALL current data with the backup. */
+    fun confirmRestore() {
+        val data = _pendingRestore.value ?: return
+        _pendingRestore.value = null
+        viewModelScope.launch {
+            try {
+                withContext(Dispatchers.IO) {
+                    db.withTransaction {
+                        profileDao.deleteAll() // products cascade
+                        data.profiles.sortedBy { it.lastAccessed }.forEach { p ->
+                            val pid = profileDao.insert(Profile(name = p.name, createdAt = p.createdAt, lastAccessed = p.lastAccessed))
+                            p.products.forEach {
+                                productDao.insert(
+                                    Product(
+                                        profileId = pid, name = it.name, rate = it.rate, cc = it.cc,
+                                        pot = it.pot, soldUnit = it.unit, quantity = it.qty
+                                    )
+                                )
+                            }
+                        }
+                        if (profileDao.count() == 0) createDefaultProfile()
+                        Unit
+                    }
+                    // Database restored successfully: now replace the saved invoice files.
+                    val dir = InvoiceImage.dir(getApplication())
+                    dir.listFiles()?.forEach { it.delete() }
+                    data.invoiceFiles.forEach { (name, bytes) ->
+                        val f = File(dir, name)
+                        f.writeBytes(bytes)
+                        val t = data.invoiceTimes[name] ?: -1L
+                        if (t > 0) f.setLastModified(t)
+                    }
+                }
+                resetUndo()
+                currentId.value = profileDao.latest()?.id
+                refreshInvoices()
+                say("Backup restored")
+            } catch (e: Exception) {
+                say("Restore failed: ${e.message}")
+            }
         }
     }
 

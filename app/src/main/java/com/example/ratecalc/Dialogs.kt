@@ -318,3 +318,27 @@ fun DateChoiceDialog(title: String, onToday: () -> Unit, onPicked: (Long) -> Uni
         }
     }
 }
+
+@Composable
+fun BackupDialog(onBackup: () -> Unit, onRestore: () -> Unit, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Backup & restore") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(
+                    "A backup is one .zip file with all your profiles, products, rates, quantities and saved invoices. Keep it in Google Drive or send it to yourself.",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Button(onClick = onBackup, modifier = Modifier.fillMaxWidth()) { Text("Create backup") }
+                OutlinedButton(onClick = onRestore, modifier = Modifier.fillMaxWidth()) { Text("Restore from backup") }
+                Text(
+                    "Restoring replaces everything currently in the app. You will be asked to confirm first.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text("Close") } }
+    )
+}

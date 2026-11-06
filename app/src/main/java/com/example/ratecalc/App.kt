@@ -63,8 +63,10 @@ fun AppRoot(vm: MainViewModel, fontScale: Float, onFontScale: (Float) -> Unit) {
     val focus = LocalFocusManager.current
     val canUndo by vm.canUndo.collectAsState()
     val canRedo by vm.canRedo.collectAsState()
+    val pendingRestore by vm.pendingRestore.collectAsState()
     var confirmUR by remember { mutableStateOf<String?>(null) }
     var showRates by remember { mutableStateOf(false) }
+    var showBackup by remember { mutableStateOf(false) }
     var showTitleDate by remember { mutableStateOf(false) }
     val undoUi = UndoUi(canUndo, canRedo, { confirmUR = "undo" }, { confirmUR = "redo" })
 
@@ -90,6 +92,12 @@ fun AppRoot(vm: MainViewModel, fontScale: Float, onFontScale: (Float) -> Unit) {
     }
     val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) vm.importFrom(uri)
+    }
+    val backupLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { uri ->
+        if (uri != null) vm.createBackup(uri)
+    }
+    val restoreLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) vm.prepareRestore(uri)
     }
 
     val selected = remember(products) { products.filter { it.quantity > 0 } }
@@ -133,6 +141,7 @@ fun AppRoot(vm: MainViewModel, fontScale: Float, onFontScale: (Float) -> Unit) {
                         DropdownMenuItem(text = { Text("Rename profile") }, onClick = { showMenu = false; renameTitle = true })
                         DropdownMenuItem(text = { Text("Font size") }, onClick = { showMenu = false; showFont = true })
                         DropdownMenuItem(text = { Text("Export / Import rates") }, onClick = { showMenu = false; showRates = true })
+                        DropdownMenuItem(text = { Text("Backup & restore") }, onClick = { showMenu = false; showBackup = true })
                     }
                 }
             }
@@ -276,6 +285,24 @@ fun AppRoot(vm: MainViewModel, fontScale: Float, onFontScale: (Float) -> Unit) {
             onToday = { vm.setTitleDate(System.currentTimeMillis()); showTitleDate = false },
             onPicked = { t -> vm.setTitleDate(t); showTitleDate = false },
             onDismiss = { showTitleDate = false }
+        )
+    }
+    if (showBackup) {
+        BackupDialog(
+            onBackup = { showBackup = false; backupLauncher.launch(Backup.fileName(System.currentTimeMillis())) },
+            onRestore = { showBackup = false; restoreLauncher.launch(arrayOf("*/*")) },
+            onDismiss = { showBackup = false }
+        )
+    }
+    pendingRestore?.let { b ->
+        ConfirmDialog(
+            title = "Restore backup?",
+            text = (if (b.createdAt > 0) "Backup from ${formatDay(b.createdAt)}\n" else "") +
+                "${b.profiles.size} profiles, ${b.productCount} products, ${b.invoiceCount} saved invoices.\n\n" +
+                "This will REPLACE all current data on this phone.",
+            confirmLabel = "Restore",
+            onConfirm = { vm.confirmRestore() },
+            onDismiss = { vm.cancelRestore() }
         )
     }
     if (showRates) {

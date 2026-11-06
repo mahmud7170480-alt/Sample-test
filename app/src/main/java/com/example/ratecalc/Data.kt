@@ -45,6 +45,12 @@ interface ProfileDao {
     @Query("SELECT COUNT(*) FROM profiles")
     suspend fun count(): Int
 
+    @Query("SELECT * FROM profiles ORDER BY lastAccessed ASC")
+    suspend fun allProfiles(): List<Profile>
+
+    @Query("DELETE FROM profiles")
+    suspend fun deleteAll()
+
     @Insert
     suspend fun insert(p: Profile): Long
 

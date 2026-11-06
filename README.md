@@ -14,3 +14,4 @@
 ## Features added
 - Font size (menu > Font size), pencil = change date (today or pick), undo/redo next to search,
   CC clear confirmation, Save as New / Overwrite Existing (latest invoice).
+- Backup & restore: menu > Backup & restore. One .zip with profiles, products, quantities and saved invoices.
