@@ -1,5 +1,6 @@
 package com.example.ratecalc
 
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
@@ -24,8 +25,11 @@ import androidx.compose.ui.unit.TextUnit
 
 /**
  * Text whose digits roll up and down like an old mechanical meter when the value changes.
- * Each digit sits in its own slot (counted from the right, so the units digit always keeps
- * the same wheel) and a soft spring gives the wheel a little analog "settle".
+ *
+ * The whole-number part is padded to [minIntDigits] wheels (6 = up to 9,99,999, so it rolls
+ * through 1 lakh = 1,00,000). Unused leading wheels stay visible but dim, like an unlit meter,
+ * and light up as the value grows. Digits are counted from the right, so the units wheel
+ * always keeps the same wheel while the total changes.
  */
 @Composable
 fun OdometerText(
@@ -33,16 +37,38 @@ fun OdometerText(
     fontSize: TextUnit,
     color: Color,
     modifier: Modifier = Modifier,
-    fontWeight: FontWeight = FontWeight.Bold
+    fontWeight: FontWeight = FontWeight.Bold,
+    minIntDigits: Int = 6
 ) {
     val density = LocalDensity.current
     val slotHeight: Dp = with(density) { fontSize.toDp() } * 1.3f
+
+    // Split "৳12345.67" into prefix / whole digits / rest and pad the whole digits.
+    val m = Regex("^(\\D*)(\\d+)(.*)$").find(text)
+    val shown: String
+    var dimCount = 0
+    var firstDigit = 0
+    if (m != null) {
+        val prefix = m.groupValues[1]
+        val whole = m.groupValues[2].padStart(minIntDigits, '0')
+        shown = prefix + whole + m.groupValues[3]
+        firstDigit = prefix.length
+        while (dimCount < whole.length - 1 && whole[dimCount] == '0') dimCount++
+    } else {
+        shown = text
+    }
+
     Row(modifier, verticalAlignment = Alignment.CenterVertically) {
-        val n = text.length
-        text.forEachIndexed { i, ch ->
+        val n = shown.length
+        shown.forEachIndexed { i, ch ->
             key(n - i) {
+                val dim = m != null && i >= firstDigit && i < firstDigit + dimCount
+                val c by animateColorAsState(
+                    targetValue = if (dim) color.copy(alpha = 0.22f) else color,
+                    label = "odometerColor"
+                )
                 if (ch in '0'..'9') {
-                    RollingDigit(ch - '0', fontSize, color, fontWeight, slotHeight)
+                    RollingDigit(ch - '0', fontSize, c, fontWeight, slotHeight)
                 } else {
                     Box(Modifier.height(slotHeight), contentAlignment = Alignment.Center) {
                         Text(ch.toString(), fontSize = fontSize, fontWeight = fontWeight, color = color)
