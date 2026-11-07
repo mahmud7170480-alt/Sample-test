@@ -1,4 +1,4 @@
-@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class, androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 
 package com.example.ratecalc
 
@@ -84,6 +84,7 @@ fun AppRoot(vm: MainViewModel, fontScale: Float, onFontScale: (Float) -> Unit) {
     var showFont by remember { mutableStateOf(false) }
     var clearCcFor by remember { mutableStateOf<Product?>(null) }
 
+    val imeVisible = WindowInsets.isImeVisible
     val snack = remember { SnackbarHostState() }
     LaunchedEffect(Unit) { vm.events.collect { snack.showSnackbar(it) } }
 
@@ -108,6 +109,7 @@ fun AppRoot(vm: MainViewModel, fontScale: Float, onFontScale: (Float) -> Unit) {
     }
 
     Scaffold(
+        modifier = Modifier.imePadding(),
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             Row(
@@ -156,7 +158,8 @@ fun AppRoot(vm: MainViewModel, fontScale: Float, onFontScale: (Float) -> Unit) {
                     onHistory = { showSave = true },
                     onClear = { confirmClear = true }
                 )
-                NavigationBar {
+                // The Grand Total stays visible above the keyboard; the tab bar hides while typing.
+                if (!imeVisible) NavigationBar {
                     NavigationBarItem(selected = tab == 0, onClick = { tab = 0 },
                         icon = { Icon(Icons.Default.ShoppingCart, null) }, label = { Text("Calculate") })
                     NavigationBarItem(selected = tab == 1, onClick = { tab = 1 },

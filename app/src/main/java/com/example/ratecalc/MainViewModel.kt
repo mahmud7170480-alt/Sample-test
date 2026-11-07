@@ -202,16 +202,24 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     fun updateInvoiceDate(f: File, time: Long) {
         viewModelScope.launch {
-            val ok = withContext(Dispatchers.IO) { InvoiceImage.updateDate(f, time) }
-            refreshInvoices()
-            say(if (ok) "Invoice date set to ${formatDay(time)}" else "This invoice has no saved data, date can't be changed")
+            try {
+                val ok = withContext(Dispatchers.IO) { InvoiceImage.updateDate(f, time) }
+                refreshInvoices()
+                say(if (ok) "Invoice date set to ${formatDay(time)}" else "This invoice has no saved data, date can't be changed")
+            } catch (e: Exception) {
+                say("Could not update date: ${e.message}")
+            }
         }
     }
 
     fun saveToGallery(f: File) {
         viewModelScope.launch {
-            val ok = withContext(Dispatchers.IO) { InvoiceImage.copyToGallery(getApplication(), f) }
-            say(if (ok) "Saved to Pictures/SampleCount" else "Could not save to gallery")
+            try {
+                val ok = withContext(Dispatchers.IO) { InvoiceImage.copyToGallery(getApplication(), f) }
+                say(if (ok) "Saved to Pictures/SampleCount" else "Gallery saving needs Android 10 or newer")
+            } catch (e: Exception) {
+                say("Could not save to gallery: ${e.message}")
+            }
         }
     }
 

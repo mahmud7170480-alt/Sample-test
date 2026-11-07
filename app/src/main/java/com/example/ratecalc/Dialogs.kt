@@ -184,7 +184,7 @@ fun ProfilesDialog(
                     }
                 }
                 Text(
-                    "A new profile is named with the current date & time and keeps your product list.",
+                    "A new profile is named with today's date and keeps your product list.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 8.dp)

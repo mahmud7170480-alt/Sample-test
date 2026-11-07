@@ -77,7 +77,7 @@ fun HistoryTab(
     viewingPath?.let { path ->
         val f = files.firstOrNull { it.path == path }
         if (f == null) {
-            viewingPath = null
+            SideEffect { viewingPath = null }
         } else {
             InvoiceViewer(
                 f,

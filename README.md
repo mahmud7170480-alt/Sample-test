@@ -16,3 +16,4 @@
   CC clear confirmation, Save as New / Overwrite Existing (latest invoice).
 - Backup & restore: menu > Backup & restore. One .zip with profiles, products, quantities and saved invoices.
 - Grand Total rolls like a mechanical odometer when quantities change (Odometer.kt).
+- Icon: purple medicine/clipboard design (adaptive + themed icon). Database upgraded to v2 (safe migration, no data loss).

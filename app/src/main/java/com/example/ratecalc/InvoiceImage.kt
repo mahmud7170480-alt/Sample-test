@@ -75,7 +75,8 @@ object InvoiceImage {
         var y = firstY
         items.forEach { it ->
             p.textAlign = Paint.Align.LEFT
-            c.drawText(fit(it.name, p, 330f), pad, y, p)
+            val rateW = p.measureText(money(it.rate))
+            c.drawText(fit(it.name, p, xRate - rateW - 24f - pad), pad, y, p)
             p.textAlign = Paint.Align.RIGHT
             c.drawText(money(it.rate), xRate, y, p)
             c.drawText(Calc.qtyLabel(it), xQty, y, p)

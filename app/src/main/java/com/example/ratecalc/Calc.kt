@@ -56,7 +56,7 @@ fun num(d: Double): String =
     if (d == d.toLong().toDouble()) d.toLong().toString() else String.format(Locale.US, "%.2f", d)
 
 /** Date only, e.g. "23 Oct 2026". */
-fun formatDay(t: Long): String = SimpleDateFormat("dd MMM yyyy", Locale.getDefault()).format(Date(t))
+fun formatDay(t: Long): String = SimpleDateFormat("dd MMM yyyy", Locale.ENGLISH).format(Date(t))
 
 /** Local timestamp -> UTC midnight of the same calendar day (what Material's DatePicker expects). */
 fun localDayToUtc(t: Long): Long {
@@ -74,7 +74,7 @@ fun utcDayToLocal(t: Long): Long {
     }.timeInMillis
 }
 
-fun formatDate(t: Long): String = SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault()).format(Date(t))
+fun formatDate(t: Long): String = SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.ENGLISH).format(Date(t))
 
 data class CsvRow(val name: String, val rate: Double, val cc: Double, val pot: Double, val unit: String, val qty: Int)
 
@@ -95,12 +95,15 @@ object Csv {
     fun parse(textIn: String): List<CsvRow> {
         val text = textIn.removePrefix("\uFEFF")
         val rows = ArrayList<CsvRow>()
-        text.lines().forEachIndexed { i, line ->
-            if (line.isBlank()) return@forEachIndexed
+        var firstRow = true
+        text.lines().forEach { line ->
+            if (line.isBlank()) return@forEach
             val c = splitLine(line)
-            if (i == 0 && c[0].trim().equals("name", ignoreCase = true)) return@forEachIndexed
+            val isHeader = firstRow && c[0].trim().equals("name", ignoreCase = true)
+            firstRow = false
+            if (isHeader) return@forEach
             val name = c[0].trim()
-            if (name.isEmpty()) return@forEachIndexed
+            if (name.isEmpty()) return@forEach
             val unit = c.getOrNull(4)?.trim().orEmpty()
             rows.add(
                 CsvRow(
